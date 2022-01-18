@@ -2,10 +2,11 @@ class Node {
   constructor(val) {
     this.val = val;
     this.next = null;
+    this.prev = null;
   }
 }
 
-class SinglyLinkedList {
+class DoublyLinkedList {
   constructor() {
     this.head = null;
     this.tail = null;
@@ -21,6 +22,7 @@ class SinglyLinkedList {
       this.tail = node;
     } else {
       this.tail.next = node;
+      node.prev = this.tail;
       this.tail = node;
     }
 
@@ -28,38 +30,38 @@ class SinglyLinkedList {
     return this;
   }
 
-  // remove node from the end - O(n)
+  // remove node from the end - O(1)
   pop() {
     if (!this.head) return undefined;
+    let oldTail = this.tail;
 
-    let current = this.head;
-    let newTail = this.tail;
-
-    while (current.next) {
-      newTail = current;
-      current = current.next;
-    }
-
-    this.tail = newTail;
-    this.tail.next = null;
-    this.length--;
-
-    if (this.length === 0) {
+    if (this.length === 1) {
       this.head = null;
       this.tail = null;
+    } else {
+      let newTail = oldTail.prev;
+      this.tail = newTail;
+      newTail.next = null;
+      oldTail.prev = null;
     }
-    return current;
+
+    this.length--;
+    return oldTail;
   }
 
   // remove node from the start - O(1)
   shift() {
+    if (this.length === 1) return this.pop();
+
     if (!this.head) return undefined;
 
     const oldHead = this.head;
-    this.head = oldHead.next;
-    this.length--;
 
-    if (this.length === 0) this.tail = null;
+    this.head = oldHead.next;
+    this.head.prev = null;
+    oldHead.next = null;
+
+    this.length--;
 
     return oldHead;
   }
@@ -68,34 +70,46 @@ class SinglyLinkedList {
   unshift(val) {
     const node = new Node(val);
 
-    if (!this.head) {
-      this.head = node;
-      this.tail = node;
-    } else {
-      node.next = this.head;
-      this.head = node;
-    }
+    if (!this.head) return this.push(val);
+
+    this.head.prev = node;
+    node.next = this.head;
+    this.head = node;
 
     this.length++;
     return this;
   }
 
-  // get a node with the given index - O(n)
+  // get a node with the given index - O(logn)
   get(index) {
     if (index < 0 || index >= this.length) return null;
 
-    let current = this.head;
-    let count = 0;
+    let current, count;
 
-    while (count !== index) {
-      current = current.next;
-      count++;
+    // check if index is closer to start or end
+
+    if (index < this.length / 2) {
+      current = this.head;
+      count = 0;
+
+      while (count !== index) {
+        current = current.next;
+        count++;
+      }
+    } else {
+      current = this.tail;
+      count = this.length - 1;
+
+      while (count !== index) {
+        current = current.prev;
+        count--;
+      }
     }
 
     return current;
   }
 
-  // set the value of the node with the given index - O(n)
+  // set the value of the node with the given index - O(logn)
   set(index, val) {
     let node = this.get(index);
 
@@ -116,8 +130,11 @@ class SinglyLinkedList {
 
     let node = new Node(val);
     let prev = this.get(index - 1);
+    let next = prev.next;
 
-    node.next = prev.next;
+    node.prev = prev;
+    node.next = next;
+    next.prev = node;
     prev.next = node;
     this.length++;
 
@@ -134,9 +151,12 @@ class SinglyLinkedList {
 
     let prev = this.get(index - 1);
     let node = prev.next;
+    let next = node.next;
 
-    prev.next = node.next;
+    prev.next = next;
+    next.prev = prev;
     node.next = null;
+    node.prev = null;
     this.length--;
 
     return true;
@@ -161,6 +181,7 @@ class SinglyLinkedList {
       next = current.next;
       // current's next will be prev (initially null)
       current.next = prev;
+      current.prev = next;
       // current will become the prev in next iteration
       prev = current;
       current = next;
@@ -170,4 +191,4 @@ class SinglyLinkedList {
   }
 }
 
-const list = new SinglyLinkedList();
+const list = new DoublyLinkedList();
